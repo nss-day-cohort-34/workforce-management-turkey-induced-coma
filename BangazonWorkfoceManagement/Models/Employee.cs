@@ -29,5 +29,24 @@ namespace BangazonWorkfoceManagement.Models
         [Required]
         [Display(Name = "Supervisor")]
         public Boolean IsSupervisor { get; set; }
+        public Computer AssignedComputer { get; set; }
+        public List<TrainingProgram> AllTrainingPrograms { get; set; } = new List<TrainingProgram>();
+        [Display(Name = "Upcoming Trainings")]
+        public List<TrainingProgram> FutureTrainings
+        {
+            get
+            {
+                return AllTrainingPrograms.Where(tp => tp.StartDate > DateTime.Now).ToList();
+            }
+        }
+        [Display(Name = "Past Trainings")]
+        public List<TrainingProgram> PastTrainings
+        {
+            get
+            {
+                return AllTrainingPrograms.Where(tp => tp.StartDate <= DateTime.Now).ToList();
+            }
+        }
+
     }
 }
