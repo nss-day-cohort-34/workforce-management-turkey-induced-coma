@@ -67,7 +67,9 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Employee/Details/5
         public ActionResult Details(int id)
         {
-            return View();
+            var employee = GetEmployeeWithComputerTraining(id);
+            if (employee == null) return NotFound();
+            return View(employee);
         }
 
         // GET: Employee/Create
@@ -136,6 +138,88 @@ namespace BangazonWorkfoceManagement.Controllers
             catch
             {
                 return View();
+            }
+        }
+        private Employee GetEmployeeById(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName, e.IsSupervisor, d.Name, d.Id AS TheDepartmentId
+                                        FROM Employee e
+                                        LEFT JOIN Department d
+                                        ON e.DepartmentId = d.Id
+                                        WHERE e.Id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    var reader = cmd.ExecuteReader();
+                    Employee employee = null;
+                    if (reader.Read())
+                    {
+                        employee = new Employee()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            Department = new Department()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("TheDepartmentId")),
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                            }
+                        };
+                    }
+                    reader.Close();
+                    return employee;
+                }
+            }
+        }
+        private Employee GetEmployeeWithComputerTraining(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName, e.IsSupervisor, d.Name, d.Id AS TheDepartmentId, c.Id AS ComputerId, c.Make, c.Manufacturer, ce.AssignDate, c.PurchaseDate
+                                        FROM Employee e
+                                        LEFT JOIN Department d
+                                        ON e.DepartmentId = d.Id
+                                        LEFT JOIN ComputerEmployee ce
+                                        ON e.Id = ce.EmployeeId
+                                        LEFT JOIN Computer c
+                                        ON c.Id = ce.ComputerId
+                                        WHERE e.Id = @id AND ce.UnassignDate IS NULL";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    var reader = cmd.ExecuteReader();
+                    Employee employee = null;
+                    if (reader.Read())
+                    {
+                        employee = new Employee()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            Department = new Department()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("TheDepartmentId")),
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                            },
+                            AssignedComputer = new Computer()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
+                                Make = reader.GetString(reader.GetOrdinal("Make")),
+                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                                AssignDate = reader.GetDateTime(reader.GetOrdinal("AssignDate")),
+                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate"))
+                            }
+                        };
+                    }
+                    reader.Close();
+                    return employee;
+                }
             }
         }
     }
