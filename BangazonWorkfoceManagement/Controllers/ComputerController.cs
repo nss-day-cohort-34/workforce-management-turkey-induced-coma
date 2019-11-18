@@ -167,13 +167,21 @@ namespace BangazonWorkfoceManagement.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"SELECT c.Id, c.Make, c.Manufacturer, ce.AssignDate, ce.UnassignDate 
+                        cmd.CommandText = @"SELECT c.Make, c.Manufacturer, c.PurchaseDate, c.DecomissionDate, ce.AssignDate
                                             FROM Computer c
-                                            LEFT JOIN ComputerEmployee ce ON ce.ComputerId = c.Id
-                                            DELETE FROM Computer c WHERE ce.AssignDate IS NULL AND c.Id = @Id;";
-                        cmd.Parameters.Add(new SqlParameter("@id", id));
+                                            LEFT JOIN ComputerEmployee ce
+                                            ON c.Id = ce.ComputerId
+                                            LEFT JOIN Employee e
+                                            ON e.Id = ce.EmployeeId
+                                            WHERE ce.AssignDate IS NULL AND c.Id = @Id;";
 
-                        cmd.ExecuteNonQuery();
+                        cmd.Parameters.Add(new SqlParameter("@computerId", id));
+                        var reader = cmd.ExecuteReader();
+
+                        if (reader.IsDBNull(reader.GetOrdinal("AssignDate")))
+                        {
+                            cmd.CommandText = @"DELETE FROM Computer where c.Id = @Id";
+                        }
                     }
                 }
                 return RedirectToAction(nameof(Index));
@@ -183,6 +191,9 @@ namespace BangazonWorkfoceManagement.Controllers
                 return View();
             }
         }
+
+
+
 
         private Computer GetComputerById(int id)
         {
