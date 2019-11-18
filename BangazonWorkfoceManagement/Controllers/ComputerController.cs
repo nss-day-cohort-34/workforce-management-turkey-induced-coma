@@ -40,14 +40,10 @@ namespace BangazonWorkfoceManagement.Controllers
 
                     var reader = cmd.ExecuteReader();
                     List<Computer> computers = new List<Computer>();
-                  
+
 
                     while (reader.Read())
                     {
-
-
-
-
                         if (reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
                         {
                             computers.Add(
@@ -59,7 +55,7 @@ namespace BangazonWorkfoceManagement.Controllers
                                     Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
 
                                 });
-                            
+
                         }
                         else
                         {
@@ -75,9 +71,8 @@ namespace BangazonWorkfoceManagement.Controllers
                                 });
 
                         }
-
-                   
                     }
+
                     reader.Close();
                     return View(computers);
                 }
@@ -87,7 +82,8 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Computer/Details/5
         public ActionResult Details(int id)
         {
-            return View();
+            Computer computer = GetComputerById(id);
+            return View(computer);
         }
 
         // GET: Computer/Create
@@ -158,5 +154,61 @@ namespace BangazonWorkfoceManagement.Controllers
                 return View();
             }
         }
+
+        private Computer GetComputerById(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT c.Id, c.PurchaseDate, c.DecomissionDate, c.Make, c.Manufacturer
+                                        FROM Computer c
+                                        WHERE @Id = Id";
+
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                    var reader = cmd.ExecuteReader();
+                    Computer computer = null;
+
+
+                    if (reader.Read())
+                    {
+                        if (reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                        {
+                            computer = new Computer
+
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                Make = reader.GetString(reader.GetOrdinal("Make")),
+                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+
+                            };
+
+                        }
+                        else
+                        {
+
+                            computer = new Computer
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
+                                Make = reader.GetString(reader.GetOrdinal("Make")),
+                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+
+                            };
+
+                        }
+                    }
+
+                    reader.Close();
+                    return computer;
+                }
+            }
+        }
+
+
     }
 }
