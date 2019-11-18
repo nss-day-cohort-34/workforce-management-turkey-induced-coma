@@ -199,7 +199,7 @@ namespace BangazonWorkfoceManagement.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName, e.IsSupervisor, d.Name, d.Id AS TheDepartmentId
+                    cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName, e.DepartmentId, e.IsSupervisor, d.Name, d.Id AS TheDepartmentId
                                         FROM Employee e
                                         LEFT JOIN Department d
                                         ON e.DepartmentId = d.Id
@@ -215,6 +215,7 @@ namespace BangazonWorkfoceManagement.Controllers
                             IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
                             FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                             LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
                             Department = new Department()
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("TheDepartmentId")),
