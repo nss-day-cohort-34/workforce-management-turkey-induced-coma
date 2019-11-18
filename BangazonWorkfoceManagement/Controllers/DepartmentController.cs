@@ -145,7 +145,8 @@ namespace BangazonWorkfoceManagement.Controllers
                                         E.Id AS EmployeeId, E.FirstName, E.LastName, E.IsSupervisor
                                         FROM Department D
                                         LEFT JOIN Employee E 
-                                        ON D.ID = E.DepartmentID";
+                                        ON D.ID = E.DepartmentID
+                                        WHERE D.ID  = @id";
 
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     var reader = cmd.ExecuteReader();
