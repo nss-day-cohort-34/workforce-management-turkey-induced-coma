@@ -151,18 +151,31 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Computer/Delete/5
         public ActionResult Delete(int id)
         {
-            return View();
+            var computer = GetComputerById(id);
+            return View(computer);
         }
 
         // POST: Computer/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public ActionResult DeleteConfirmed(int id)
         {
             try
             {
-                // TODO: Add delete logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"SELECT c.Id, c.Make, c.Manufacturer, ce.AssignDate, ce.UnassignDate 
+                                            FROM Computer c
+                                            LEFT JOIN ComputerEmployee ce ON ce.ComputerId = c.Id
+                                            DELETE FROM Computer c WHERE ce.AssignDate IS NULL AND c.Id = @Id;";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
 
+                        cmd.ExecuteNonQuery();
+                    }
+                }
                 return RedirectToAction(nameof(Index));
             }
             catch
