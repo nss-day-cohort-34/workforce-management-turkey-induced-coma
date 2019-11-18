@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BangazonWorkfoceManagement.Models;
+using BangazonWorkfoceManagement.Models.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -38,7 +39,8 @@ namespace BangazonWorkfoceManagement.Controllers
                     cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName, e.IsSupervisor, d.Name, d.Id AS TheDepartmentId
                                         FROM Employee e
                                         LEFT JOIN Department d
-                                        ON e.DepartmentId = d.Id";
+                                        ON e.DepartmentId = d.Id
+                                        ORDER BY d.Name, e.IsSupervisor, e.LastName, e.FirstName";
                     var reader = cmd.ExecuteReader();
                     List<Employee> employees = new List<Employee>();
                     while (reader.Read())
@@ -75,19 +77,42 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Employee/Create
         public ActionResult Create()
         {
-            return View();
+            var viewModel = new EmployeeCreateViewModel()
+            {
+                Departments = GetDepartments()
+            };
+            return View(viewModel);
         }
+
+
+
 
         // POST: Employee/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public ActionResult Create(EmployeeCreateViewModel viewModel)
         {
             try
             {
-                // TODO: Add insert logic here
+                var newEmployee = viewModel.Employee;
 
-                return RedirectToAction(nameof(Index));
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @" INSERT INTO Employee(FirstName, LastName, DepartmentId, IsSupervisor)
+                                                VALUES (@firstName, @lastName, @departmentId, @isSupervisor);";
+                        cmd.Parameters.Add(new SqlParameter("@firstName", newEmployee.FirstName));
+                        cmd.Parameters.Add(new SqlParameter("@lastName", newEmployee.LastName));
+                        cmd.Parameters.Add(new SqlParameter("@departmentId", newEmployee.DepartmentId));
+                        cmd.Parameters.Add(new SqlParameter("@isSupervisor", newEmployee.IsSupervisor));
+
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    return RedirectToAction(nameof(Index));
+                }
             }
             catch
             {
@@ -251,5 +276,31 @@ namespace BangazonWorkfoceManagement.Controllers
             reader.Close();
             return trainingPrograms;
         }
+        private List<Department> GetDepartments()
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT Id, Name
+                                        FROM Department
+                                        ORDER BY Name";
+                    var reader = cmd.ExecuteReader();
+                    List<Department> deparments = new List<Department>();
+                    while (reader.Read())
+                    {
+                        Department department = new Department()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
+                        };
+                        deparments.Add(department);
+                    }
+                    return deparments;
+                }
+            }
+        }
     }
 }
+

@@ -24,6 +24,7 @@ namespace BangazonWorkfoceManagement.Models
                 return $"{FirstName} {LastName}";
             }
         }
+        [Display(Name = "Department")]
         public int DepartmentId { get; set; }
         public Department Department { get; set; }
         [Required]
