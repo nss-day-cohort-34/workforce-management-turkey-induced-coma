@@ -145,7 +145,7 @@ namespace BangazonWorkfoceManagement.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
-                            DELETE FROM EmployeeTraining WHERE EmployeeId = @id;
+                            DELETE FROM EmployeeTraining WHERE TrainingProgramId = @id;
                             DELETE FROM TrainingProgram WHERE id = @id;";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
