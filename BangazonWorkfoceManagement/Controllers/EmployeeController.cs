@@ -123,19 +123,46 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Employee/Edit/5
         public ActionResult Edit(int id)
         {
-            return View();
+            var viewModel = new EmployeeEditViewModel()
+            {
+                Employee = GetEmployeeById(id),
+                Departments = GetDepartments()
+            };
+            return View(viewModel);
         }
 
         // POST: Employee/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public ActionResult Edit(int id, EmployeeEditViewModel viewModel)
         {
+            var updatedEmployee = viewModel.Employee;
             try
             {
-                // TODO: Add update logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"UPDATE Employee
+                                            SET FirstName = @firstName,
+                                                LastName = @lastName,
+                                                DepartmentId = @departmentId
+                                                WHERE Id = @id;
+                                                ";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+                        cmd.Parameters.Add(new SqlParameter("@firstName", updatedEmployee.FirstName));
+                        cmd.Parameters.Add(new SqlParameter("@lastName", updatedEmployee.LastName));
+                        cmd.Parameters.Add(new SqlParameter("@departmentId", updatedEmployee.DepartmentId));
 
-                return RedirectToAction(nameof(Index));
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        if (rowsAffected > 0)
+                        {
+                            return RedirectToAction(nameof(Index));
+                        }
+                        throw new Exception("No rows affected");
+                    }
+                }
             }
             catch
             {
@@ -172,7 +199,7 @@ namespace BangazonWorkfoceManagement.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName, e.IsSupervisor, d.Name, d.Id AS TheDepartmentId
+                    cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName, e.DepartmentId, e.IsSupervisor, d.Name, d.Id AS TheDepartmentId
                                         FROM Employee e
                                         LEFT JOIN Department d
                                         ON e.DepartmentId = d.Id
@@ -188,6 +215,7 @@ namespace BangazonWorkfoceManagement.Controllers
                             IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
                             FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                             LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
                             Department = new Department()
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("TheDepartmentId")),
