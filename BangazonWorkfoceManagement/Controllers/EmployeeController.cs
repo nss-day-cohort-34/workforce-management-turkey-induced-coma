@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BangazonWorkfoceManagement.Models;
+using BangazonWorkfoceManagement.Models.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -75,8 +76,15 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Employee/Create
         public ActionResult Create()
         {
-            return View();
+            var viewModel = new EmployeeCreateViewModel()
+            {
+                Departments = GetDepartments()
+            };
+            return View(viewModel);
         }
+
+
+
 
         // POST: Employee/Create
         [HttpPost]
@@ -251,5 +259,31 @@ namespace BangazonWorkfoceManagement.Controllers
             reader.Close();
             return trainingPrograms;
         }
+        private List<Department> GetDepartments()
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT Id, Name
+                                        FROM Department
+                                        ORDER BY Name";
+                    var reader = cmd.ExecuteReader();
+                    List<Department> deparments = new List<Department>();
+                    while (reader.Read())
+                    {
+                        Department department = new Department()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
+                        };
+                        deparments.Add(department);
+                    }
+                    return deparments;
+                }
+            }
+        }
     }
 }
+
