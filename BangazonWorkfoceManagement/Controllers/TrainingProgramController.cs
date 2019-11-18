@@ -34,13 +34,16 @@ namespace BangazonWorkfoceManagement.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT t.Id, t.Name, t.StartDate, t.EndDate, t.MaxAttendees
-                                        FROM TrainingProgram t";
+                    cmd.CommandText = @"SELECT tp.Id, tp.Name, tp.StartDate, tp.EndDate, tp.MaxAttendees
+                                        FROM TrainingProgram tp WHERE StartDate > GETDATE()";
                     var reader = cmd.ExecuteReader();
                     List<TrainingProgram> trainingPrograms = new List<TrainingProgram>();
                     while (reader.Read())
                     {
+                        //if()
+                        //{
 
+                        //}
                         TrainingProgram trainingProgram = new TrainingProgram()
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
