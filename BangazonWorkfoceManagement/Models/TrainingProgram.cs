@@ -10,12 +10,19 @@ namespace BangazonWorkfoceManagement.Models
     {
         [Required]
         public int Id { get; set; }
+
         [Required]
+        [Display(Name = "Program")]
         public string Name { get; set; }
+
         [Required]
         public DateTime StartDate { get; set; }
+
         [Required]
         public DateTime EndDate { get; set; }
+
         public int MaxAttendees { get; set; }
-    }
+
+        public Employee Employee { get; set; }
+}
 }

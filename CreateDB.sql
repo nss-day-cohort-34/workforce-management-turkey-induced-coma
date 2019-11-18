@@ -1,4 +1,4 @@
- USE MASTER
+﻿ USE MASTER
  GO
 
  IF NOT EXISTS (
