@@ -89,17 +89,33 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Computer/Create
         public ActionResult Create()
         {
-            return View();
+            var viewModel = new Computer();
+            return View(viewModel);
         }
 
         // POST: Computer/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public ActionResult Create(Computer computer)
         {
             try
             {
-                // TODO: Add insert logic here
+
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @" INSERT INTO Computer (PurchaseDate, Make, Manufacturer)
+                                             VALUES (@PurchaseDate, @Make, @Manufacturer);";
+                        cmd.Parameters.Add(new SqlParameter("@PurchaseDate", computer.PurchaseDate));
+                        cmd.Parameters.Add(new SqlParameter("@Make", computer.Make));
+                        cmd.Parameters.Add(new SqlParameter("@Manufacturer", computer.Manufacturer));
+
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
 
                 return RedirectToAction(nameof(Index));
             }
