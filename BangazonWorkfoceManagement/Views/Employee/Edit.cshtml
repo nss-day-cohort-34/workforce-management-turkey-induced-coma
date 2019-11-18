@@ -28,6 +28,31 @@
                 <span asp-validation-for="Employee.DepartmentId" class="text-danger"></span>
             </div>
             <div class="form-group">
+                @if (Model.CurrentComputer != null)
+                {
+                    <p>
+                        Current Computer
+                        <span class="font-italic">
+                            @Model.CurrentComputer.Manufacturer @Model.CurrentComputer.Make
+                        </span>
+                    </p>
+                }
+                else
+                {
+                    <p>
+                        Current Computer
+                        <span class="font-italic">
+                            None
+                        </span>
+                    </p>
+                }
+            </div>
+            <div class="form-group">
+                <label asp-for="Employee.ComputerId" class="control-label"></label>
+                <select asp-for="Employee.ComputerId" asp-items="@Model.ComputerOptions"></select>
+                <span asp-validation-for="Employee.ComputerId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
                 <input type="submit" value="Save" class="btn btn-primary" />
             </div>
         </form>

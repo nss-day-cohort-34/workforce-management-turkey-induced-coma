@@ -126,7 +126,9 @@ namespace BangazonWorkfoceManagement.Controllers
             var viewModel = new EmployeeEditViewModel()
             {
                 Employee = GetEmployeeById(id),
-                Departments = GetDepartments()
+                Departments = GetDepartments(),
+                CurrentComputer = GetEmployeesComputer(id),
+                UnassignedComputers = GetUnassignedComputers()
             };
             return View(viewModel);
         }
@@ -144,23 +146,53 @@ namespace BangazonWorkfoceManagement.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"UPDATE Employee
-                                            SET FirstName = @firstName,
+                        if (viewModel.Employee.ComputerId == 0)
+                        {
+                            cmd.CommandText = @"UPDATE Employee
+                                                SET FirstName = @firstName,
                                                 LastName = @lastName,
                                                 DepartmentId = @departmentId
                                                 WHERE Id = @id;
                                                 ";
-                        cmd.Parameters.Add(new SqlParameter("@id", id));
-                        cmd.Parameters.Add(new SqlParameter("@firstName", updatedEmployee.FirstName));
-                        cmd.Parameters.Add(new SqlParameter("@lastName", updatedEmployee.LastName));
-                        cmd.Parameters.Add(new SqlParameter("@departmentId", updatedEmployee.DepartmentId));
+                            cmd.Parameters.Add(new SqlParameter("@id", id));
+                            cmd.Parameters.Add(new SqlParameter("@firstName", updatedEmployee.FirstName));
+                            cmd.Parameters.Add(new SqlParameter("@lastName", updatedEmployee.LastName));
+                            cmd.Parameters.Add(new SqlParameter("@departmentId", updatedEmployee.DepartmentId));
 
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        if (rowsAffected > 0)
-                        {
-                            return RedirectToAction(nameof(Index));
+                            int rowsAffected = cmd.ExecuteNonQuery();
+                            if (rowsAffected > 0)
+                            {
+                                return RedirectToAction(nameof(Index));
+                            }
+                            throw new Exception("No rows affected");
                         }
-                        throw new Exception("No rows affected");
+                        else
+                        {
+                            cmd.CommandText = @"UPDATE ComputerEmployee
+                                                SET UnassignDate = @assignDate
+                                                WHERE EmployeeId = @id AND UnassignDate IS NULL;
+                                                INSERT INTO ComputerEmployee
+                                                (EmployeeId, ComputerId, AssignDate)
+                                                VALUES (@id, @computerId, @assignDate);
+                                                UPDATE Employee
+                                                SET FirstName = @firstName,
+                                                LastName = @lastName,
+                                                DepartmentId = @departmentId
+                                                WHERE Id = @id;";
+                            cmd.Parameters.Add(new SqlParameter("@id", id));
+                            cmd.Parameters.Add(new SqlParameter("@firstName", updatedEmployee.FirstName));
+                            cmd.Parameters.Add(new SqlParameter("@lastName", updatedEmployee.LastName));
+                            cmd.Parameters.Add(new SqlParameter("@departmentId", updatedEmployee.DepartmentId));
+                            cmd.Parameters.Add(new SqlParameter("@computerId", updatedEmployee.ComputerId));
+                            cmd.Parameters.Add(new SqlParameter("@assignDate", DateTime.Now));
+
+                            int rowsAffected = cmd.ExecuteNonQuery();
+                            if (rowsAffected > 0)
+                            {
+                                return RedirectToAction(nameof(Index));
+                            }
+                            throw new Exception("No rows affected");
+                        }
                     }
                 }
             }
@@ -325,7 +357,75 @@ namespace BangazonWorkfoceManagement.Controllers
                         };
                         deparments.Add(department);
                     }
+                    reader.Close();
                     return deparments;
+                }
+            }
+        }
+        private Computer GetEmployeesComputer(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT e.Id AS EmployeeId, c.Id AS TheComputerId, c.Make, c.Manufacturer
+                                        FROM Employee e
+                                        LEFT JOIN ComputerEmployee ce
+                                        ON e.Id = ce.EmployeeId
+                                        LEFT JOIN Computer c
+                                        ON c.Id = ce.ComputerId
+                                        WHERE EmployeeId = @id AND UnassignDate IS NULL
+                                        ";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    var reader = cmd.ExecuteReader();
+                    Computer computer = null;
+                    if (reader.Read())
+                    {
+                        if (!reader.IsDBNull(reader.GetOrdinal("TheComputerId")))
+                        {
+                            computer = new Computer()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("TheComputerId")),
+                                Make = reader.GetString(reader.GetOrdinal("Make")),
+                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                            };
+                        }
+                    }
+                    reader.Close();
+                    return computer;
+                }
+            }
+        }
+        private List<Computer> GetUnassignedComputers()
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT c.Id, c.Make, c.Manufacturer
+                                        FROM Computer c
+                                        LEFT JOIN ComputerEmployee ce
+                                        ON c.Id = ce.ComputerId
+                                        LEFT JOIN Employee e
+                                        ON e.Id = ce.EmployeeId
+                                        WHERE (ce.UnassignDate IS NOT NULL OR ce.AssignDate IS NULL) AND c.DecomissionDate IS NULL;";
+
+                    var reader = cmd.ExecuteReader();
+                    List<Computer> computers = new List<Computer>();
+                    while (reader.Read())
+                    {
+                        Computer computer = new Computer()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Make = reader.GetString(reader.GetOrdinal("Make")),
+                            Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                        };
+                        computers.Add(computer);
+                    }
+                    reader.Close();
+                    return computers;
                 }
             }
         }
