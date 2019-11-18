@@ -40,10 +40,6 @@ namespace BangazonWorkfoceManagement.Controllers
                     List<TrainingProgram> trainingPrograms = new List<TrainingProgram>();
                     while (reader.Read())
                     {
-                        //if()
-                        //{
-
-                        //}
                         TrainingProgram trainingProgram = new TrainingProgram()
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
@@ -75,13 +71,28 @@ namespace BangazonWorkfoceManagement.Controllers
         // POST: TrainingProgram/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public ActionResult Create(TrainingProgram TrainingProgram)
         {
             try
             {
-                // TODO: Add insert logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @" INSERT INTO TrainingProgram(Name, StartDate, EndDate, MaxAttendees)
+                                                VALUES (@name, @startDate, @endDate, @maxAttendees);";
+                        cmd.Parameters.Add(new SqlParameter("@Name", TrainingProgram.Name));
+                        cmd.Parameters.Add(new SqlParameter("@startDate", TrainingProgram.StartDate));
+                        cmd.Parameters.Add(new SqlParameter("@endDate", TrainingProgram.EndDate));
+                        cmd.Parameters.Add(new SqlParameter("@maxAttendees", TrainingProgram.MaxAttendees));
 
-                return RedirectToAction(nameof(Index));
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    return RedirectToAction(nameof(Index));
+                }
+
             }
             catch
             {
