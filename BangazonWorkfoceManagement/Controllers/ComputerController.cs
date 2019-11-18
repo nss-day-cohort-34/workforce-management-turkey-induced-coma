@@ -157,6 +157,7 @@ namespace BangazonWorkfoceManagement.Controllers
 
         // POST: Computer/Delete/5
         [HttpPost]
+        [ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(int id)
         {
@@ -167,7 +168,7 @@ namespace BangazonWorkfoceManagement.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"SELECT c.Make, c.Manufacturer, c.PurchaseDate, c.DecomissionDate, ce.AssignDate
+                        cmd.CommandText = @"SELECT c.Id, c.Make, c.Manufacturer, c.PurchaseDate, c.DecomissionDate, ce.AssignDate
                                             FROM Computer c
                                             LEFT JOIN ComputerEmployee ce
                                             ON c.Id = ce.ComputerId
@@ -175,20 +176,35 @@ namespace BangazonWorkfoceManagement.Controllers
                                             ON e.Id = ce.EmployeeId
                                             WHERE ce.AssignDate IS NULL AND c.Id = @Id;";
 
-                        cmd.Parameters.Add(new SqlParameter("@computerId", id));
+                        cmd.Parameters.Add(new SqlParameter("@Id", id));
                         var reader = cmd.ExecuteReader();
-
-                        if (reader.IsDBNull(reader.GetOrdinal("AssignDate")))
+                        if (reader.Read())
                         {
-                            cmd.CommandText = @"DELETE FROM Computer where c.Id = @Id";
+
+                            var computerId = reader.GetInt32(reader.GetOrdinal("Id"));
+                         
+                            if (id == computerId)
+                                
+                            {
+                                reader.Close();
+                                cmd.CommandText = @"DELETE FROM Computer WHERE Id = @Id";
+                                cmd.ExecuteNonQuery();
+                                return RedirectToAction(nameof(Index));
+                            }
+                            else
+                            {
+                                throw new Exception("Computer cannot be deleted.");
+                            }
                         }
+                        return RedirectToAction(nameof(Index));
+
                     }
                 }
-                return RedirectToAction(nameof(Index));
+                
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                throw ex;
             }
         }
 

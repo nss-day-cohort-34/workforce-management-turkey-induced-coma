@@ -14,14 +14,14 @@ namespace BangazonWorkfoceManagement.Models
         [Display (Name = "Purchase Date")]
         public DateTime PurchaseDate { get; set; }
         [Display (Name = "Decomission Date")]
-        public DateTime DecomissionDate { get; set; }
+        public DateTime? DecomissionDate { get; set; }
 
         [Required]
         public string Make { get; set; }
         [Required]
         public string Manufacturer { get; set; }
-        [Required]
+        
         [Display(Name = "Assign Date")]
-        public DateTime AssignDate { get; set; }
+        public DateTime? AssignDate { get; set; }
     }
 }
