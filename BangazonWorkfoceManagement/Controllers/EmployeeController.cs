@@ -74,20 +74,21 @@ namespace BangazonWorkfoceManagement.Controllers
             return View(employee);
         }
 
-        // GET: TrainingProgram/Assign
-        public ActionResult Assign(int id)
+        // GET: Employee/AssignTraining
+        public ActionResult AssignTraining(int id)
         {
-            var viewModel = new TrainingViewModel()
+            var viewModel = new AssignTrainingViewModel()
             {
                 Employee = GetEmployeeById(id),
+                AllTrainingPrograms = GetEmployeeTrainingById(id)
             };
             return View(viewModel);
         }
 
-        // POST: TrainingProgram/Assign
+        // POST: Employee/AssignTraining
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Assign(TrainingViewModel TrainingViewModel)
+        public ActionResult AssignTraining(AssignTrainingViewModel TrainingViewModel)
         {
             try
             {
@@ -350,48 +351,32 @@ namespace BangazonWorkfoceManagement.Controllers
             }
         }
 
-        private Employee GetEmployeeTrainingById(int id)
+        private List<TrainingProgram> GetEmployeeTrainingById(int EmployeeId)
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName, e.IsSupervisor, et.TrainingProgramId,
-                                        tp.Name AS TrainingName
-                                        FROM Employee e
-                                        LEFT JOIN EmployeeTraining et ON e.Id = e.EmployeeId
-                                        LEFT JOIN TrainingProgram tp ON tp.Id = et.TrainingProgramId
-                                        WHERE e.Id = @id";
-                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    cmd.CommandText = @"SELECT tp.Id, tp.Name, tp.StartDate, tp.EndDate, tp.MaxAttendees
+                                        FROM TrainingProgram tp WHERE StartDate > GETDATE()
+                                        LEFT JOIN EmployeeTraining et on et.id =";
                     var reader = cmd.ExecuteReader();
-                    Employee employee = null;
-                    if (reader.Read())
+                    List<TrainingProgram> trainingPrograms = new List<TrainingProgram>();
+                    while (reader.Read())
                     {
-                        employee = new Employee()
+                        TrainingProgram trainingProgram = new TrainingProgram()
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            Department = new Department()
-                            {
-                                Id = reader.GetInt32(reader.GetOrdinal("TheDepartmentId")),
-                                Name = reader.GetString(reader.GetOrdinal("Name"))
-                            },
-                            AssignedComputer = new Computer()
-                            {
-                                Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
-                                Make = reader.GetString(reader.GetOrdinal("Make")),
-                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
-                                AssignDate = reader.GetDateTime(reader.GetOrdinal("AssignDate")),
-                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate"))
-                            }
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
+                            EndDate = reader.GetDateTime(reader.GetOrdinal("EndDate")),
+                            MaxAttendees = reader.GetInt32(reader.GetOrdinal("MaxAttendees"))
                         };
+                        trainingPrograms.Add(trainingProgram);
                     }
                     reader.Close();
-                    employee.AllTrainingPrograms = GetEmployeeTrainingPrograms(id, cmd);
-                    return employee;
+                    return (trainingPrograms);
                 }
             }
         }

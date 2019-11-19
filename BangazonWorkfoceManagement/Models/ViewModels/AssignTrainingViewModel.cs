@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BangazonWorkfoceManagement.Models.ViewModels
 {
-    public class TrainingViewModel
+    public class AssignTrainingViewModel
     {
         public TrainingProgram TrainingProgram { get; set; }
         public Employee Employee { get; set; }
@@ -21,22 +21,13 @@ namespace BangazonWorkfoceManagement.Models.ViewModels
                 return AllTrainingPrograms.Where(tp => tp.StartDate > DateTime.Now).ToList();
             }
         }
-
-        [Display(Name = "Past Trainings")]
-        public List<TrainingProgram> PastTrainings
-        {
-            get
-            {
-                return AllTrainingPrograms.Where(tp => tp.StartDate <= DateTime.Now).ToList();
-            }
-        }
         public List<SelectListItem> TrainingOptions
         {
             get
             {
                 if (FutureTrainings == null) return null;
                 return FutureTrainings
-                    .Select(d => new SelectListItem(d.Name, d.Id.ToString()))
+                    .Select(ft => new SelectListItem(ft.Name, ft.Id.ToString()))
                     .ToList();
             }
         }
