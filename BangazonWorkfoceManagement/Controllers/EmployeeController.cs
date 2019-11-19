@@ -80,7 +80,7 @@ namespace BangazonWorkfoceManagement.Controllers
             var viewModel = new AssignTrainingViewModel()
             {
                 Employee = GetEmployeeById(id),
-                AllTrainingPrograms = GetEmployeeTrainingById(id)
+                AllTrainingPrograms = GetAvailableTrainings(id)
             };
             return View(viewModel);
         }
@@ -97,6 +97,10 @@ namespace BangazonWorkfoceManagement.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
+                        //cmd.CommandText = @"UPDATE EmployeeTraining
+                        //                     SET EmployeeId = @employeeId
+                        //                     TrainingProgramId = @trainingProgramId
+                        //                     WHERE EmployeeId = @id; ";
                         cmd.CommandText = @" INSERT INTO EmployeeTraining(EmployeeId, TrainingProgramId)
                                                 VALUES (@EmployeeId, @TrainingProgramId);";
                         cmd.Parameters.Add(new SqlParameter("@EmployeeId", TrainingViewModel.Employee.Id));
@@ -369,16 +373,23 @@ namespace BangazonWorkfoceManagement.Controllers
             }
         }
 
-        private List<TrainingProgram> GetEmployeeTrainingById(int EmployeeId)
+        private List<TrainingProgram> GetAvailableTrainings(int EmployeeId)
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT tp.Id, tp.Name, tp.StartDate, tp.EndDate, tp.MaxAttendees
-                                        FROM TrainingProgram tp WHERE StartDate > GETDATE()
-                                        LEFT JOIN EmployeeTraining et on et.id =";
+                    cmd.CommandText = @"SELECT tp.Id, tp.Name, tp.StartDate, tp.MaxAttendees
+                                    FROM TrainingProgram tp
+                                    LEFT JOIN EmployeeTraining et on et.TrainingProgramId = tp.Id
+                                    GROUP BY tp.Id, tp.Name, tp.StartDate, tp.MaxAttendees
+                                    HAVING tp.StartDate > GETDATE() AND tp.MaxAttendees > COUNT(et.TrainingProgramId)
+                                    UNION
+                                    SELECT tp.Id, tp.Name, tp.StartDate, tp.MaxAttendees
+                                    FROM TrainingProgram tp
+                                    LEFT JOIN EmployeeTraining et on et.TrainingProgramId = tp.Id
+                                    WHERE et.EmployeeId = @id AND tp.StartDate > GETDATE()";
                     var reader = cmd.ExecuteReader();
                     List<TrainingProgram> trainingPrograms = new List<TrainingProgram>();
                     while (reader.Read())
