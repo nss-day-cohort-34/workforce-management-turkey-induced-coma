@@ -1,23 +1,17 @@
-﻿@model BangazonWorkfoceManagement.Models.ViewModels.ComputerCreateViewModel
+﻿@model BangazonWorkfoceManagement.Models.ViewModels.ComputerEditViewModel
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Edit";
 }
 
-<h1>Create</h1>
+<h1>Edit</h1>
 
 <h4>Computer</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Create">
+        <form asp-action="Edit">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Computer.PurchaseDate" class="control-label"></label>
-                <input asp-for="Computer.PurchaseDate" class="form-control" />
-                <span asp-validation-for="Computer.PurchaseDate" class="text-danger"></span>
-            </div>
-
             <div class="form-group">
                 <label asp-for="Computer.Make" class="control-label"></label>
                 <input asp-for="Computer.Make" class="form-control" />
@@ -29,12 +23,7 @@
                 <span asp-validation-for="Computer.Manufacturer" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Computer.EmployeeId" class="control-label"></label>
-                <select asp-for="Computer.EmployeeId" asp-items="@Model.EmployeeOptions"></select>
-                <span asp-validation-for="Computer.EmployeeId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <input type="submit" value="Save" class="btn btn-primary" />
             </div>
         </form>
     </div>
