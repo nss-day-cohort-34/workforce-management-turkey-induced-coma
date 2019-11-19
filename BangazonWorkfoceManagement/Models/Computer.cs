@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -23,5 +24,7 @@ namespace BangazonWorkfoceManagement.Models
         
         [Display(Name = "Assign Date")]
         public DateTime? AssignDate { get; set; }
+        public int EmployeeId { get; set; }
+
     }
 }

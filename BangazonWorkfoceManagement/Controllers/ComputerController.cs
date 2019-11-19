@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BangazonWorkfoceManagement.Models;
+using BangazonWorkfoceManagement.Models.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -89,18 +90,21 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Computer/Create
         public ActionResult Create()
         {
-            var viewModel = new Computer();
-            return View(viewModel);
+            var viewModel = new ComputerCreateViewModel()
+            {
+                Employees = GetAllEmployees()
+            };
+                return View(viewModel);
         }
 
         // POST: Computer/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(Computer computer)
+        public ActionResult Create(ComputerCreateViewModel viewModel)
         {
             try
             {
-
+                var newComputer = viewModel.Computer;
                 using (SqlConnection conn = Connection)
                 {
                     conn.Open();
@@ -108,9 +112,10 @@ namespace BangazonWorkfoceManagement.Controllers
                     {
                         cmd.CommandText = @" INSERT INTO Computer (PurchaseDate, Make, Manufacturer)
                                              VALUES (@PurchaseDate, @Make, @Manufacturer);";
-                        cmd.Parameters.Add(new SqlParameter("@PurchaseDate", computer.PurchaseDate));
-                        cmd.Parameters.Add(new SqlParameter("@Make", computer.Make));
-                        cmd.Parameters.Add(new SqlParameter("@Manufacturer", computer.Manufacturer));
+                        cmd.Parameters.Add(new SqlParameter("@PurchaseDate", newComputer.PurchaseDate));
+                        cmd.Parameters.Add(new SqlParameter("@Make", newComputer.Make));
+                        cmd.Parameters.Add(new SqlParameter("@Manufacturer", newComputer.Manufacturer));
+                        cmd.Parameters.Add(new SqlParameter("@Manufacturer", newComputer.EmployeeId));
 
 
                         cmd.ExecuteNonQuery();
