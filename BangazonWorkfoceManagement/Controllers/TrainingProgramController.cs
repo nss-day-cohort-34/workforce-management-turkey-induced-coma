@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BangazonWorkfoceManagement.Models;
+using BangazonWorkfoceManagement.Models.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -131,6 +132,7 @@ namespace BangazonWorkfoceManagement.Controllers
             }
         }
 
+        
         // GET: TrainingProgram/Edit/5
         public ActionResult Edit(int id)
         {
@@ -222,5 +224,6 @@ namespace BangazonWorkfoceManagement.Controllers
                 }
             }
         }
+
     }
 }
