@@ -24,6 +24,7 @@ namespace BangazonWorkfoceManagement.Models
         
         [Display(Name = "Assign Date")]
         public DateTime? AssignDate { get; set; }
+        [Display(Name = "Assign Employee")]
         public int EmployeeId { get; set; }
 
     }

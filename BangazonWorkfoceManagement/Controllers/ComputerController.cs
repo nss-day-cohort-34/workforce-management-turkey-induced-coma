@@ -111,11 +111,13 @@ namespace BangazonWorkfoceManagement.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @" INSERT INTO Computer (PurchaseDate, Make, Manufacturer)
-                                             VALUES (@PurchaseDate, @Make, @Manufacturer);";
+                                             VALUES (@PurchaseDate, @Make, @Manufacturer);
+                                             INSERT INTO ComputerEmployee (EmployeeId, ComputerId, AssignDate)
+                                             VALUES (@EmployeeId, @ComputerId, @AssignDate)";
                         cmd.Parameters.Add(new SqlParameter("@PurchaseDate", newComputer.PurchaseDate));
                         cmd.Parameters.Add(new SqlParameter("@Make", newComputer.Make));
                         cmd.Parameters.Add(new SqlParameter("@Manufacturer", newComputer.Manufacturer));
-                        cmd.Parameters.Add(new SqlParameter("@Manufacturer", newComputer.EmployeeId));
+                        
 
 
                         cmd.ExecuteNonQuery();
@@ -133,25 +135,57 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Computer/Edit/5
         public ActionResult Edit(int id)
         {
-            return View();
+            var viewModel = new ComputerEditViewModel()
+            {
+                Computer = GetComputerById(id),
+            };
+
+            return View(viewModel);
         }
 
         // POST: Computer/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public ActionResult Edit(int id, ComputerEditViewModel viewModel)
         {
+            var updatedComputer = viewModel.Computer;
             try
             {
-                // TODO: Add update logic here
+
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"
+                            UPDATE Computer 
+                               SET Make = @Make, 
+                                   Manufacturer = @Manufacturer
+                            WHERE id = @id";
+         
+
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+                        cmd.Parameters.Add(new SqlParameter("@Make", updatedComputer.Make));
+                        cmd.Parameters.Add(new SqlParameter("@Manufacturer", updatedComputer.Manufacturer));
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
 
                 return RedirectToAction(nameof(Index));
             }
             catch
             {
-                return View();
+                viewModel = new ComputerEditViewModel()
+                {
+                    Computer = updatedComputer,
+                };
+                  
+                return View(viewModel);
             }
         }
+
+
 
         // GET: Computer/Delete/5
         public ActionResult Delete(int id)
@@ -270,6 +304,42 @@ namespace BangazonWorkfoceManagement.Controllers
             }
         }
 
+        private List<Employee> GetAllEmployees()
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName, e.IsSupervisor, d.Name, d.Id AS TheDepartmentId
+                                        FROM Employee e
+                                        LEFT JOIN Department d
+                                        ON e.DepartmentId = d.Id
+                                        ORDER BY d.Name, e.IsSupervisor, e.LastName, e.FirstName";
+                    var reader = cmd.ExecuteReader();
+                    List<Employee> employees = new List<Employee>();
+                    while (reader.Read())
+                    {
+
+                        Employee employee = new Employee()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            Department = new Department()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("TheDepartmentId")),
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                            }
+                        };
+                        employees.Add(employee);
+                    }
+                    reader.Close();
+                    return employees;
+                }
+            }
+        }
 
     }
 }
