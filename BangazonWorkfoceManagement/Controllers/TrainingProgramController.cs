@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BangazonWorkfoceManagement.Models;
+using BangazonWorkfoceManagement.Models.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -95,8 +96,12 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: TrainingProgram/PastPrograms/Details/5
         public ActionResult PastDetails(int id)
         {
-            var Training = GetTrainingById(id);
-            return View(Training);
+            PastTrainingDetailsViewModel viewModel = new PastTrainingDetailsViewModel()
+            {
+                TrainingProgram = GetTrainingById(id),
+                Attendees = GetPastAttendees(id)
+            };
+            return View(viewModel);
         }
 
         // GET: TrainingProgram/Create
@@ -225,6 +230,40 @@ namespace BangazonWorkfoceManagement.Controllers
 
                     reader.Close();
                     return trainingProgram;
+                }
+            }
+        }
+        private List<Employee> GetPastAttendees(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName
+                                        FROM Employee e
+                                        LEFT JOIN EmployeeTraining et
+                                        ON et.EmployeeId = e.Id
+                                        LEFT JOIN TrainingProgram t
+                                        ON t.Id = et.TrainingProgramId
+                                        WHERE t.Id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    List<Employee> employees = new List<Employee>();
+
+                    while (reader.Read())
+                    {
+                        employees.Add(new Employee()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName"))
+                        }); 
+
+                    }
+
+                    reader.Close();
+                    return employees;
                 }
             }
         }

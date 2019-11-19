@@ -1,4 +1,4 @@
-﻿@model BangazonWorkfoceManagement.Models.TrainingProgram
+﻿@model BangazonWorkfoceManagement.Models.ViewModels.PastTrainingDetailsViewModel
 
 @{
     ViewData["Title"] = "PastDetails";
@@ -10,39 +10,42 @@
     <h4>TrainingProgram</h4>
     <hr />
     <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Id)
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.TrainingProgram.Name)
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Id)
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.TrainingProgram.Name)
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.TrainingProgram.StartDate)
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Name)
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.TrainingProgram.StartDate)
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.StartDate)
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.TrainingProgram.EndDate)
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.StartDate)
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.TrainingProgram.EndDate)
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EndDate)
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.TrainingProgram.MaxAttendees)
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EndDate)
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.TrainingProgram.MaxAttendees)
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.MaxAttendees)
+        <dt class="col-sm-2">
+            Attendees
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.MaxAttendees)
-        </dd>
+        @foreach (Employee e in Model.Attendees)
+        {
+            <dd class="col-sm-10">
+                @e.FullName
+            </dd>
+        }
+
     </dl>
 </div>
 <div>
-    @Html.ActionLink("Edit", "Edit", new { /* id = Model.PrimaryKey */ }) |
-    <a asp-action="Index">Back to List</a>
+    <a asp-action="PastPrograms">Back to List</a>
 </div>
