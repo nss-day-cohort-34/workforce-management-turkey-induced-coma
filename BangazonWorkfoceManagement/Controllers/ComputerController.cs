@@ -105,19 +105,27 @@ namespace BangazonWorkfoceManagement.Controllers
             try
             {
                 var newComputer = viewModel.Computer;
+                var newComputerEmployee = viewModel.Employee;
+                int newComputerID = 0;
                 using (SqlConnection conn = Connection)
                 {
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @" INSERT INTO Computer (PurchaseDate, Make, Manufacturer)
-                                             VALUES (@PurchaseDate, @Make, @Manufacturer);
-                                             INSERT INTO ComputerEmployee (EmployeeId, ComputerId, AssignDate)
-                                             VALUES (@EmployeeId, @ComputerId, @AssignDate)";
+                                             VALUES (@PurchaseDate, @Make, @Manufacturer);";
+                                             
                         cmd.Parameters.Add(new SqlParameter("@PurchaseDate", newComputer.PurchaseDate));
                         cmd.Parameters.Add(new SqlParameter("@Make", newComputer.Make));
                         cmd.Parameters.Add(new SqlParameter("@Manufacturer", newComputer.Manufacturer));
-                        
+                        newComputerID = (Int32)cmd.ExecuteScalar();
+
+                        cmd.CommandText = @"INSERT INTO ComputerEmployee (EmployeeId, ComputerId, AssignDate)
+                                            VALUES (@EmployeeId, @ComputerId, @AssignDate)";
+                        cmd.Parameters.Add(new SqlParameter("@EmployeeId", newComputerEmployee.Id));
+                        cmd.Parameters.Add(new SqlParameter("@ComputerId", newComputer.Id));
+                        cmd.Parameters.Add(new SqlParameter("@AssignDate", newComputer.AssignDate));
+
 
 
                         cmd.ExecuteNonQuery();
