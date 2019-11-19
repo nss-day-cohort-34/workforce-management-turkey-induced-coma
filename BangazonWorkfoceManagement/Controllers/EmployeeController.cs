@@ -323,26 +323,44 @@ namespace BangazonWorkfoceManagement.Controllers
                     Employee employee = null;
                     if (reader.Read())
                     {
-                        employee = new Employee()
+                        if (!reader.IsDBNull(reader.GetOrdinal("ComputerId")))
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            Department = new Department()
+                            employee = new Employee()
                             {
-                                Id = reader.GetInt32(reader.GetOrdinal("TheDepartmentId")),
-                                Name = reader.GetString(reader.GetOrdinal("Name"))
-                            },
-                            AssignedComputer = new Computer()
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                Department = new Department()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("TheDepartmentId")),
+                                    Name = reader.GetString(reader.GetOrdinal("Name"))
+                                },
+                                AssignedComputer = new Computer()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
+                                    Make = reader.GetString(reader.GetOrdinal("Make")),
+                                    Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                                    AssignDate = reader.GetDateTime(reader.GetOrdinal("AssignDate")),
+                                    PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate"))
+                                }
+                            };
+                        }
+                        else
+                        {
+                            employee = new Employee()
                             {
-                                Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
-                                Make = reader.GetString(reader.GetOrdinal("Make")),
-                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
-                                AssignDate = reader.GetDateTime(reader.GetOrdinal("AssignDate")),
-                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate"))
-                            }
-                        };
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                Department = new Department()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("TheDepartmentId")),
+                                    Name = reader.GetString(reader.GetOrdinal("Name"))
+                                }
+                            };
+                        }
                     }
                     reader.Close();
                     employee.AllTrainingPrograms = GetEmployeeTrainingPrograms(id, cmd);
@@ -394,6 +412,10 @@ namespace BangazonWorkfoceManagement.Controllers
             cmd.Parameters.Add(new SqlParameter("@id", employeeId));
             List<TrainingProgram> trainingPrograms = new List<TrainingProgram>();
             var reader = cmd.ExecuteReader();
+            if (!reader.Read())
+            {
+                return null;
+            }
             while (reader.Read())
             {
                 TrainingProgram trainingProgram = new TrainingProgram()
