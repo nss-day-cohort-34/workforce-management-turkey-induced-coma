@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BangazonWorkfoceManagement.Models;
+using BangazonWorkfoceManagement.Models.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -35,8 +36,13 @@ namespace BangazonWorkfoceManagement.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT c.Id, c.PurchaseDate, c.DecomissionDate, c.Make, c.Manufacturer
-                                        FROM Computer c";
+                    cmd.CommandText = @"SELECT c.Id, c.Make, c.Manufacturer, c.DecomissionDate, c.PurchaseDate,
+                                        e.id AS 'EmployeeId', e.FirstName, e.LastName, ce.AssignDate, ce.UnassignDate
+                                        FROM Computer c 
+                                        LEFT JOIN ComputerEmployee ce ON CE.ComputerId = c.Id
+                                        LEFT JOIN Employee e ON ce.employeeId = e.Id";
+
+
 
                     var reader = cmd.ExecuteReader();
                     List<Computer> computers = new List<Computer>();
@@ -44,7 +50,27 @@ namespace BangazonWorkfoceManagement.Controllers
 
                     while (reader.Read())
                     {
-                        if (reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                        if (reader.IsDBNull(reader.GetOrdinal("DecomissionDate")) && !reader.IsDBNull(reader.GetOrdinal("EmployeeId")))
+                        {
+                            computers.Add(
+                                new Computer()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                    Make = reader.GetString(reader.GetOrdinal("Make")),
+                                    Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+
+                                    Employee = new Employee()
+                                    {
+                                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                        FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                        LastName = reader.GetString(reader.GetOrdinal("LastName"))
+                                    }
+
+                                });
+
+                        }
+                        else if (reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
                         {
                             computers.Add(
                                 new Computer()
@@ -55,7 +81,6 @@ namespace BangazonWorkfoceManagement.Controllers
                                     Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
 
                                 });
-
                         }
                         else
                         {
@@ -89,17 +114,21 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Computer/Create
         public ActionResult Create()
         {
-            var viewModel = new Computer();
+            var viewModel = new ComputerCreateViewModel()
+            {
+                Employees = GetAllEmployees()
+            };
             return View(viewModel);
         }
 
         // POST: Computer/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(Computer computer)
+        public ActionResult Create(ComputerCreateViewModel viewModel)
         {
             try
             {
+                var newComputer = viewModel.Computer;
 
                 using (SqlConnection conn = Connection)
                 {
@@ -107,13 +136,33 @@ namespace BangazonWorkfoceManagement.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @" INSERT INTO Computer (PurchaseDate, Make, Manufacturer)
+                                             OUTPUT INSERTED.Id
                                              VALUES (@PurchaseDate, @Make, @Manufacturer);";
-                        cmd.Parameters.Add(new SqlParameter("@PurchaseDate", computer.PurchaseDate));
-                        cmd.Parameters.Add(new SqlParameter("@Make", computer.Make));
-                        cmd.Parameters.Add(new SqlParameter("@Manufacturer", computer.Manufacturer));
+
+                        cmd.Parameters.Add(new SqlParameter("@PurchaseDate", newComputer.PurchaseDate));
+                        cmd.Parameters.Add(new SqlParameter("@Make", newComputer.Make));
+                        cmd.Parameters.Add(new SqlParameter("@Manufacturer", newComputer.Manufacturer));
+
+                        int newComputerId = 0;
+                        object newComputerObject = cmd.ExecuteScalar();
+
+                        newComputerId = (Int32)newComputerObject;
+                        newComputer.Id = newComputerId;
 
 
-                        cmd.ExecuteNonQuery();
+                        if (newComputer.EmployeeId != 0)
+                        {
+                            cmd.CommandText = @"INSERT INTO ComputerEmployee (EmployeeId, ComputerId, AssignDate)
+                                                OUTPUT INSERTED.Id
+                                                VALUES (@EmployeeId, @ComputerId, @AssignDate);";
+                            DateTime AssignDate = DateTime.Now;
+
+                            cmd.Parameters.Add(new SqlParameter("@EmployeeId", newComputer.EmployeeId));
+                            cmd.Parameters.Add(new SqlParameter("@ComputerId", newComputerId));
+                            cmd.Parameters.Add(new SqlParameter("@AssignDate", AssignDate));
+                            int newComputerEmployeeId = (Int32)cmd.ExecuteScalar();
+                        }
+
                     }
                 }
 
@@ -128,25 +177,57 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Computer/Edit/5
         public ActionResult Edit(int id)
         {
-            return View();
+            var viewModel = new ComputerEditViewModel()
+            {
+                Computer = GetComputerById(id),
+            };
+
+            return View(viewModel);
         }
 
         // POST: Computer/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public ActionResult Edit(int id, ComputerEditViewModel viewModel)
         {
+            var updatedComputer = viewModel.Computer;
             try
             {
-                // TODO: Add update logic here
+
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"
+                            UPDATE Computer 
+                               SET Make = @Make, 
+                                   Manufacturer = @Manufacturer
+                            WHERE id = @id";
+
+
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+                        cmd.Parameters.Add(new SqlParameter("@Make", updatedComputer.Make));
+                        cmd.Parameters.Add(new SqlParameter("@Manufacturer", updatedComputer.Manufacturer));
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
 
                 return RedirectToAction(nameof(Index));
             }
             catch
             {
-                return View();
+                viewModel = new ComputerEditViewModel()
+                {
+                    Computer = updatedComputer,
+                };
+
+                return View(viewModel);
             }
         }
+
+
 
         // GET: Computer/Delete/5
         public ActionResult Delete(int id)
@@ -314,6 +395,42 @@ namespace BangazonWorkfoceManagement.Controllers
             }
         }
 
+        private List<Employee> GetAllEmployees()
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName, e.IsSupervisor, d.Name, d.Id AS TheDepartmentId
+                                        FROM Employee e
+                                        LEFT JOIN Department d
+                                        ON e.DepartmentId = d.Id
+                                        ORDER BY d.Name, e.IsSupervisor, e.LastName, e.FirstName";
+                    var reader = cmd.ExecuteReader();
+                    List<Employee> employees = new List<Employee>();
+                    while (reader.Read())
+                    {
+
+                        Employee employee = new Employee()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            Department = new Department()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("TheDepartmentId")),
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                            }
+                        };
+                        employees.Add(employee);
+                    }
+                    reader.Close();
+                    return employees;
+                }
+            }
+        }
 
     }
 }
