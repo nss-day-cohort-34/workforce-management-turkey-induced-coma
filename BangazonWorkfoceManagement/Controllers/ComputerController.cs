@@ -221,9 +221,9 @@ namespace BangazonWorkfoceManagement.Controllers
                         {
 
                             var computerId = reader.GetInt32(reader.GetOrdinal("Id"));
-                         
+
                             if (id == computerId)
-                                
+
                             {
                                 reader.Close();
                                 cmd.CommandText = @"DELETE FROM Computer WHERE Id = @Id";
@@ -239,7 +239,7 @@ namespace BangazonWorkfoceManagement.Controllers
 
                     }
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -247,7 +247,56 @@ namespace BangazonWorkfoceManagement.Controllers
             }
         }
 
+        //GET: /Computer/Filter 
+        public IActionResult Filter(string searchString)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT c.Id, c.Make, c.Manufacturer, c.PurchaseDate, c.DecomissionDate
+                                        FROM Computer c
+                                        WHERE c.Make LIKE @searchString OR c.Manufacturer LIKE @searchString";
+                    cmd.Parameters.Add(new SqlParameter("@searchString", $"%{searchString}%"));
 
+                    var reader = cmd.ExecuteReader();
+                    List<Computer> computers = new List<Computer>();
+                    while (reader.Read())
+                    {
+                        if (reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                        {
+                            computers.Add(
+                                new Computer()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                    Make = reader.GetString(reader.GetOrdinal("Make")),
+                                    Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+
+                                });
+
+                        }
+                        else
+                        {
+                            computers.Add(
+                                new Computer()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                    DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
+                                    Make = reader.GetString(reader.GetOrdinal("Make")),
+                                    Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+
+                                });
+
+                        }
+                    }
+                    reader.Close();
+                    return View(computers);
+                }
+            }
+        }
 
 
         private Computer GetComputerById(int id)
