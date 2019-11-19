@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BangazonWorkfoceManagement.Models;
+using BangazonWorkfoceManagement.Models.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -59,8 +60,8 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: TrainingProgram/Details/5
         public ActionResult Details(int id)
         {
-            var Training = GetTrainingById(id);
-            return View(Training);
+                TrainingProgram program = GetEmployeesInTraining(id);
+                return View(program);
         }
 
         //GET: TrainingProgram/PastPrograms
@@ -217,10 +218,57 @@ namespace BangazonWorkfoceManagement.Controllers
 
                     }
 
+
                     reader.Close();
                     return trainingProgram;
                 }
             }
         }
+        private TrainingProgram GetEmployeesInTraining(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT TP.Name, E.FirstName
+                                        FROM EmployeeTraining ET
+                                        LEFT JOIN TrainingProgram TP ON ET.TrainingProgramId = TP.Id 
+                                        LEFT JOIN Employee E ON ET.EmployeeId = E.Id
+                                        WHERE TP.Id = @id";
+
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    var reader = cmd.ExecuteReader();
+
+                    TrainingProgram tp = null;
+                    while (reader.Read())
+                    {
+                        if (tp == null)
+                        {
+                            tp = new TrainingProgram
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                Name = reader.GetString(reader.GetOrdinal("Name")),
+                            };
+                        }
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("EmployeeId")))
+                        {
+                            tp.Employees.Add(
+                                new Employee()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                   
+                                }
+                            );
+                        }
+                    }
+                    reader.Close();
+                    return tp;
+                }
+            }
+        }
+
     }
 }
