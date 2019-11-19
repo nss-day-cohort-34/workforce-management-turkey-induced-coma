@@ -92,6 +92,12 @@ namespace BangazonWorkfoceManagement.Controllers
                 }
             }
         }
+        // GET: TrainingProgram/PastPrograms/Details/5
+        public ActionResult PastDetails(int id)
+        {
+            var Training = GetTrainingById(id);
+            return View(Training);
+        }
 
         // GET: TrainingProgram/Create
         public ActionResult Create()

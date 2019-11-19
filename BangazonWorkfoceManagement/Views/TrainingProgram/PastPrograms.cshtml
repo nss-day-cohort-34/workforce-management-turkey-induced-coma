@@ -42,6 +42,9 @@
             <td>
                 @Html.DisplayFor(modelItem => item.MaxAttendees)
             </td>
+            <td>
+                @Html.ActionLink("Details", "PastDetails", new { id = item.Id }) 
+            </td>
         </tr>
 }
     </tbody>
