@@ -37,7 +37,7 @@ namespace BangazonWorkfoceManagement.Controllers
                 {
                     cmd.CommandText = @"SELECT D.Id, D.Name, D.Budget, COUNT(E.Id) AS EmployeeCount
                                         FROM Department D
-                                        JOIN Employee E ON D.ID = E.DepartmentID
+                                        LEFT JOIN Employee E ON D.ID = E.DepartmentID
                                         GROUP BY D.Id, D.Name, D.Budget";
                     var reader = cmd.ExecuteReader();
                     List<DepartmentListViewModel> departments = new List<DepartmentListViewModel>();
@@ -69,17 +69,32 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Department/Create
         public ActionResult Create()
         {
-            return View();
+            var viewModel = new DepartmentCreateViewModel();
+            
+            return View(viewModel);
         }
 
         // POST: Department/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public ActionResult Create(DepartmentCreateViewModel viewModel)
         {
             try
             {
-                // TODO: Add insert logic here
+                var newDept = viewModel.Department;
+
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"INSERT INTO Department (Name, Budget)
+                                            VALUES (@Name, @Budget);";
+                        cmd.Parameters.Add(new SqlParameter("@Name", newDept.Name));
+                        cmd.Parameters.Add(new SqlParameter("@Budget", newDept.Budget));
+                        cmd.ExecuteNonQuery();
+                    }
+                }
 
                 return RedirectToAction(nameof(Index));
             }
@@ -183,6 +198,7 @@ namespace BangazonWorkfoceManagement.Controllers
                 }
             }
         }
+       
     }
 }
 
