@@ -373,7 +373,7 @@ namespace BangazonWorkfoceManagement.Controllers
             }
         }
 
-        private List<TrainingProgram> GetAvailableTrainings(int EmployeeId)
+        private List<TrainingProgram> GetAvailableTrainings(int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -394,15 +394,16 @@ namespace BangazonWorkfoceManagement.Controllers
                     List<TrainingProgram> trainingPrograms = new List<TrainingProgram>();
                     while (reader.Read())
                     {
-                        TrainingProgram trainingProgram = new TrainingProgram()
+                        if (!reader.IsDBNull(reader.GetOrdinal("Id")))
+                            trainingPrograms.Add(
+                        new TrainingProgram()
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
                             StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
                             EndDate = reader.GetDateTime(reader.GetOrdinal("EndDate")),
                             MaxAttendees = reader.GetInt32(reader.GetOrdinal("MaxAttendees"))
-                        };
-                        trainingPrograms.Add(trainingProgram);
+                        });
                     }
                     reader.Close();
                     return (trainingPrograms);

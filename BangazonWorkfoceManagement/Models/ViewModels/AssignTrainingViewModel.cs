@@ -9,9 +9,10 @@ namespace BangazonWorkfoceManagement.Models.ViewModels
 {
     public class AssignTrainingViewModel
     {
-        public TrainingProgram TrainingProgram { get; set; }
         public Employee Employee { get; set; }
         public List<TrainingProgram> AllTrainingPrograms { get; set; } = new List<TrainingProgram>();
+
+        public List<int> SelectedTrainingIds { get; set; } = new List<int>();
 
         [Display(Name = "Upcoming Trainings")]
         public List<TrainingProgram> FutureTrainings
