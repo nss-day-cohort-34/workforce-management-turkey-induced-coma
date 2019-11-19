@@ -10,7 +10,6 @@ namespace BangazonWorkfoceManagement.Models.ViewModels
     public class TrainingViewModel
     {
         public TrainingProgram TrainingProgram { get; set; }
-        public int TrainingProgramId { get; set; }
         public Employee Employee { get; set; }
         public List<TrainingProgram> AllTrainingPrograms { get; set; } = new List<TrainingProgram>();
 

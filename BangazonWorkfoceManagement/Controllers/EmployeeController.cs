@@ -79,7 +79,6 @@ namespace BangazonWorkfoceManagement.Controllers
         {
             var viewModel = new TrainingViewModel()
             {
-                TrainingProgram = GetTrainingById(id),
                 Employee = GetEmployeeById(id),
             };
             return View(viewModel);
@@ -100,7 +99,7 @@ namespace BangazonWorkfoceManagement.Controllers
                         cmd.CommandText = @" INSERT INTO EmployeeTraining(EmployeeId, TrainingProgramId)
                                                 VALUES (@EmployeeId, @TrainingProgramId);";
                         cmd.Parameters.Add(new SqlParameter("@EmployeeId", TrainingViewModel.Employee.Id));
-                        cmd.Parameters.Add(new SqlParameter("@TrainingProgramId", TrainingViewModel.TrainingProgramId));
+                        cmd.Parameters.Add(new SqlParameter("@TrainingProgramId", TrainingViewModel.TrainingProgram.Id));
 
                         cmd.ExecuteNonQuery();
                     }
@@ -350,6 +349,52 @@ namespace BangazonWorkfoceManagement.Controllers
                 }
             }
         }
+
+        private Employee GetEmployeeTrainingById(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName, e.IsSupervisor, et.TrainingProgramId,
+                                        tp.Name AS TrainingName
+                                        FROM Employee e
+                                        LEFT JOIN EmployeeTraining et ON e.Id = e.EmployeeId
+                                        LEFT JOIN TrainingProgram tp ON tp.Id = et.TrainingProgramId
+                                        WHERE e.Id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    var reader = cmd.ExecuteReader();
+                    Employee employee = null;
+                    if (reader.Read())
+                    {
+                        employee = new Employee()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            Department = new Department()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("TheDepartmentId")),
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                            },
+                            AssignedComputer = new Computer()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
+                                Make = reader.GetString(reader.GetOrdinal("Make")),
+                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                                AssignDate = reader.GetDateTime(reader.GetOrdinal("AssignDate")),
+                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate"))
+                            }
+                        };
+                    }
+                    reader.Close();
+                    employee.AllTrainingPrograms = GetEmployeeTrainingPrograms(id, cmd);
+                    return employee;
+                }
+            }
+        }
         private List<TrainingProgram> GetEmployeeTrainingPrograms(int employeeId, SqlCommand cmd)
         {
             cmd.Parameters.Clear();
@@ -468,38 +513,6 @@ namespace BangazonWorkfoceManagement.Controllers
                     }
                     reader.Close();
                     return computers;
-                }
-            }
-        }
-        private TrainingProgram GetTrainingById(int id)
-        {
-            using (SqlConnection conn = Connection)
-            {
-                conn.Open();
-                using (SqlCommand cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = @"SELECT tp.Id, tp.Name, tp.StartDate, tp.EndDate, tp.MaxAttendees
-                                        FROM TrainingProgram tp
-                                        WHERE tp.id = @id";
-                    cmd.Parameters.Add(new SqlParameter("@id", id));
-                    SqlDataReader reader = cmd.ExecuteReader();
-                    TrainingProgram trainingProgram = null;
-
-                    if (reader.Read())
-                    {
-                        trainingProgram = new TrainingProgram
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Name")),
-                            StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
-                            EndDate = reader.GetDateTime(reader.GetOrdinal("EndDate")),
-                            MaxAttendees = reader.GetInt32(reader.GetOrdinal("MaxAttendees"))
-                        };
-
-                    }
-
-                    reader.Close();
-                    return trainingProgram;
                 }
             }
         }
