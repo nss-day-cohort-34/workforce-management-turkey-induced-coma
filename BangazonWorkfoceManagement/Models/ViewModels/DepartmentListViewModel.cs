@@ -15,6 +15,6 @@ namespace BangazonWorkfoceManagement.Models.ViewModels
         public string Name { get; set; }
         public int Budget { get; set; }
         [Display(Name = "Employee Count")]
-        public int  EmployeeCount { get; set; }
+        public int?  EmployeeCount { get; set; }
     }
 }
