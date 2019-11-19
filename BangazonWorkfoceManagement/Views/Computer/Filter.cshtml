@@ -1,26 +1,14 @@
 ﻿@model IEnumerable<BangazonWorkfoceManagement.Models.Computer>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Filter";
 }
 
-<section class="container">
-    <h1>Computers</h1>
-    <form asp-action="Filter">
-        <div class="col-5 p-0">
-            <div class="input-group mb-3">
-                <input type="text" id ="searchString" name="searchString" class="form-control" placeholder="Enter make or manufacturer..." aria-label="ComputerFilter" aria-describedby="basic-addon1">
-                <div class="input-group-append">
-                    <input type="submit" value="Search" class="btn btn-outline-secondary" id="filterComputers__input"/>
-                </div>
-            </div>
-        </div>
-    </form>
-    <p>
-        <a asp-action="Create">Create New</a>
-    </p>
-</section>
+<h1>Computer Search Results</h1>
 
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
 <table class="table">
     <thead>
         <tr>
@@ -36,6 +24,9 @@
             <th>
                 @Html.DisplayNameFor(model => model.Manufacturer)
             </th>
+            <th>
+                @Html.DisplayNameFor(model => model.AssignDate)
+            </th>
             <th></th>
         </tr>
     </thead>
@@ -50,11 +41,13 @@
                     @Html.DisplayFor(modelItem => item.DecomissionDate)
                 </td>
                 <td>
-                    @Html.ActionLink(item.Make, "Details", "Computer", new { id = item.Id })
-
+                    @Html.DisplayFor(modelItem => item.Make)
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.Manufacturer)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.AssignDate)
                 </td>
                 <td>
                     @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
@@ -65,3 +58,8 @@
         }
     </tbody>
 </table>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
