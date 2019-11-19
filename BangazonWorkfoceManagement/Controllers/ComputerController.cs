@@ -36,8 +36,13 @@ namespace BangazonWorkfoceManagement.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT c.Id, c.PurchaseDate, c.DecomissionDate, c.Make, c.Manufacturer
-                                        FROM Computer c";
+                    cmd.CommandText = @"SELECT c.Id, c.Make, c.Manufacturer, c.DecomissionDate, c.PurchaseDate,
+                                        e.id AS 'EmployeeId', e.FirstName, e.LastName, ce.AssignDate, ce.UnassignDate
+                                        FROM Computer c 
+                                        LEFT JOIN ComputerEmployee ce ON CE.ComputerId = c.Id
+                                        LEFT JOIN Employee e ON ce.employeeId = e.Id";
+
+
 
                     var reader = cmd.ExecuteReader();
                     List<Computer> computers = new List<Computer>();
@@ -45,7 +50,27 @@ namespace BangazonWorkfoceManagement.Controllers
 
                     while (reader.Read())
                     {
-                        if (reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                        if (reader.IsDBNull(reader.GetOrdinal("DecomissionDate")) && !reader.IsDBNull(reader.GetOrdinal("EmployeeId")))
+                        {
+                            computers.Add(
+                                new Computer()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                    Make = reader.GetString(reader.GetOrdinal("Make")),
+                                    Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+
+                                    Employee = new Employee()
+                                    {
+                                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                        FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                        LastName = reader.GetString(reader.GetOrdinal("LastName"))
+                                    }
+
+                                });
+
+                        }
+                        else if (reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
                         {
                             computers.Add(
                                 new Computer()
@@ -56,7 +81,6 @@ namespace BangazonWorkfoceManagement.Controllers
                                     Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
 
                                 });
-
                         }
                         else
                         {
@@ -94,7 +118,7 @@ namespace BangazonWorkfoceManagement.Controllers
             {
                 Employees = GetAllEmployees()
             };
-                return View(viewModel);
+            return View(viewModel);
         }
 
         // POST: Computer/Create
@@ -105,30 +129,40 @@ namespace BangazonWorkfoceManagement.Controllers
             try
             {
                 var newComputer = viewModel.Computer;
-                var newComputerEmployee = viewModel.Employee;
-                int newComputerID = 0;
+
                 using (SqlConnection conn = Connection)
                 {
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @" INSERT INTO Computer (PurchaseDate, Make, Manufacturer)
+                                             OUTPUT INSERTED.Id
                                              VALUES (@PurchaseDate, @Make, @Manufacturer);";
-                                             
+
                         cmd.Parameters.Add(new SqlParameter("@PurchaseDate", newComputer.PurchaseDate));
                         cmd.Parameters.Add(new SqlParameter("@Make", newComputer.Make));
                         cmd.Parameters.Add(new SqlParameter("@Manufacturer", newComputer.Manufacturer));
-                        newComputerID = (Int32)cmd.ExecuteScalar();
 
-                        cmd.CommandText = @"INSERT INTO ComputerEmployee (EmployeeId, ComputerId, AssignDate)
-                                            VALUES (@EmployeeId, @ComputerId, @AssignDate)";
-                        cmd.Parameters.Add(new SqlParameter("@EmployeeId", newComputerEmployee.Id));
-                        cmd.Parameters.Add(new SqlParameter("@ComputerId", newComputer.Id));
-                        cmd.Parameters.Add(new SqlParameter("@AssignDate", newComputer.AssignDate));
+                        int newComputerId = 0;
+                        object newComputerObject = cmd.ExecuteScalar();
 
+                        newComputerId = (Int32)newComputerObject;
+                        newComputer.Id = newComputerId;
 
 
-                        cmd.ExecuteNonQuery();
+                        if (newComputer.EmployeeId != 0)
+                        {
+                            cmd.CommandText = @"INSERT INTO ComputerEmployee (EmployeeId, ComputerId, AssignDate)
+                                                OUTPUT INSERTED.Id
+                                                VALUES (@EmployeeId, @ComputerId, @AssignDate);";
+                            DateTime AssignDate = DateTime.Now;
+
+                            cmd.Parameters.Add(new SqlParameter("@EmployeeId", newComputer.EmployeeId));
+                            cmd.Parameters.Add(new SqlParameter("@ComputerId", newComputerId));
+                            cmd.Parameters.Add(new SqlParameter("@AssignDate", AssignDate));
+                            int newComputerEmployeeId = (Int32)cmd.ExecuteScalar();
+                        }
+
                     }
                 }
 
@@ -170,7 +204,7 @@ namespace BangazonWorkfoceManagement.Controllers
                                SET Make = @Make, 
                                    Manufacturer = @Manufacturer
                             WHERE id = @id";
-         
+
 
                         cmd.Parameters.Add(new SqlParameter("@id", id));
                         cmd.Parameters.Add(new SqlParameter("@Make", updatedComputer.Make));
@@ -188,7 +222,7 @@ namespace BangazonWorkfoceManagement.Controllers
                 {
                     Computer = updatedComputer,
                 };
-                  
+
                 return View(viewModel);
             }
         }
