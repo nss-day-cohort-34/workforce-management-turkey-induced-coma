@@ -83,5 +83,6 @@
 <div>
     @Html.ActionLink("Edit", "Edit", new { /* id = Model.PrimaryKey */ }) |
     <a asp-action="Index">Back to List</a> |
-    <a asp-action="AssignTraining">Assign to Training Program</a>
+    @Html.ActionLink("Assign to Training Program", "AssignTraining", new { id = Model.Id }) 
+    @*<a asp-action="AssignTraining">Assign to Training Program</a>*@
 </div>

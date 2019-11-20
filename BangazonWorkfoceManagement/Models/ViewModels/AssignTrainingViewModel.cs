@@ -12,7 +12,13 @@ namespace BangazonWorkfoceManagement.Models.ViewModels
         public Employee Employee { get; set; }
         public List<TrainingProgram> AllTrainingPrograms { get; set; } = new List<TrainingProgram>();
 
-        public List<int> SelectedTrainingIds { get; set; } = new List<int>();
+        public List<int> SelectedTrainingIds
+        {
+            get
+            {
+                return AllTrainingPrograms.Select(tp => tp.Id).ToList();
+            }
+        }
 
         [Display(Name = "Upcoming Trainings")]
         public List<TrainingProgram> FutureTrainings

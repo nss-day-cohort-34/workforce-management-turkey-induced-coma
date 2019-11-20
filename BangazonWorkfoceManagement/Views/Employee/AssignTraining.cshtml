@@ -13,6 +13,11 @@
         <form asp-action="AssignTraining">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
+                <label asp-for="SelectedTrainingIds" class="control-label"></label>
+                <select asp-for="SelectedTrainingIds" asp-items="@Model.TrainingOptions"></select>
+                <span asp-validation-for="SelectedTrainingIds" class="text-danger"></span>
+            </div>
+            <div class="form-group">
                 <input type="submit" value="Assign" class="btn btn-primary" />
             </div>
         </form>
@@ -20,7 +25,7 @@
 </div>
 
 <div>
-    <a asp-action="Details">Back to Details</a>
+    <a asp-action="Index">Back to List</a>
 </div>
 
 @section Scripts {

@@ -34,6 +34,8 @@ namespace BangazonWorkfoceManagement.Models
         [Display(Name = "Available Computers")]
         public int ComputerId { get; set; }
         public List<TrainingProgram>? AllTrainingPrograms { get; set; } = new List<TrainingProgram>();
+
+
         [Display(Name = "Upcoming Trainings")]
         public List<TrainingProgram> FutureTrainings
         {
