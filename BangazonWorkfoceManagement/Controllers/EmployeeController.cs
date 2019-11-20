@@ -92,6 +92,8 @@ namespace BangazonWorkfoceManagement.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult AssignTraining(int id, AssignTrainingViewModel TrainingViewModel)
         {
+            TrainingViewModel.Employee = GetEmployeeWTrainingById(id);
+            var TrainingProgramIdsToDelete = TrainingViewModel.Employee.AllTrainingPrograms.Select(tp => tp.Id).ToList();
             try
             {
                 using (SqlConnection conn = Connection)
@@ -99,12 +101,19 @@ namespace BangazonWorkfoceManagement.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"DELETE FROM EmployeeTraining WHERE EmployeeId = @id;";
+                        foreach (int oldTrainingId in TrainingProgramIdsToDelete)
+                        {
+                            cmd.CommandText = @"DELETE FROM EmployeeTraining 
+                                            WHERE EmployeeId = @id AND TrainingProgramId = @trainingId;";
 
-                        cmd.Parameters.Add(new SqlParameter("@id", id));
+                            cmd.Parameters.Add(new SqlParameter("@id", id));
+                            cmd.Parameters.Add(new SqlParameter("@trainingId", oldTrainingId));
 
-                        cmd.ExecuteNonQuery();
-                        foreach(int trainingId in TrainingViewModel.SelectedTrainingIds)
+
+                            cmd.ExecuteNonQuery();
+
+                        }
+                        foreach (int trainingId in TrainingViewModel.SelectedTrainingIds)
                         {
 
                             cmd.CommandText = @"INSERT INTO EmployeeTraining(EmployeeId, TrainingProgramId)
@@ -123,9 +132,9 @@ namespace BangazonWorkfoceManagement.Controllers
                 }
 
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                throw ex;
             }
         }
 
