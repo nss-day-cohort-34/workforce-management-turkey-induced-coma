@@ -74,6 +74,85 @@ namespace BangazonWorkfoceManagement.Controllers
             return View(employee);
         }
 
+        // GET: Employee/AssignTraining
+        public ActionResult AssignTraining(int id)
+        {
+            Employee employee = GetEmployeeWTrainingById(id);
+            if (employee != null)
+            {
+
+                var viewModel = new AssignTrainingViewModel()
+                {
+                    Employee = employee,
+                    AllTrainingPrograms = GetAvailableTrainings(id),
+                    SelectedTrainingIds = employee.AllTrainingPrograms.Select(tp => tp.Id).ToList()
+                };
+                return View(viewModel);
+            }
+            else
+            {
+                var viewModel = new AssignTrainingViewModel()
+                {
+                    AllTrainingPrograms = GetAvailableTrainings(id),
+                };
+                return View(viewModel);
+            }
+        }
+
+        // POST: Employee/AssignTraining
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult AssignTraining(int id, AssignTrainingViewModel TrainingViewModel)
+        {
+            TrainingViewModel.Employee = GetEmployeeWTrainingById(id);
+            try
+            {
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        if (TrainingViewModel.Employee != null)
+                        {
+                            var TrainingProgramIdsToDelete = TrainingViewModel.Employee.AllTrainingPrograms.Select(tp => tp.Id).ToList();
+                            foreach (int oldTrainingId in TrainingProgramIdsToDelete)
+                            {
+                                cmd.CommandText = @"DELETE FROM EmployeeTraining 
+                                            WHERE EmployeeId = @id AND TrainingProgramId = @trainingId;";
+                                cmd.Parameters.Clear();
+                                cmd.Parameters.Add(new SqlParameter("@id", id));
+                                cmd.Parameters.Add(new SqlParameter("@trainingId", oldTrainingId));
+
+
+                                cmd.ExecuteNonQuery();
+
+                            }
+                        }
+                        foreach (int trainingId in TrainingViewModel.SelectedTrainingIds)
+                        {
+
+                            cmd.CommandText = @"INSERT INTO EmployeeTraining(EmployeeId, TrainingProgramId)
+                                                    VALUES (@id, @TrainingProgramId);";
+
+                            cmd.Parameters.Clear();
+                            cmd.Parameters.Add(new SqlParameter("@id", id));
+                            cmd.Parameters.Add(new SqlParameter("@TrainingProgramId", trainingId));
+
+                            cmd.ExecuteNonQuery();
+                        }
+
+                    }
+                    return RedirectToAction(nameof(Index));
+                }
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+
         // GET: Employee/Create
         public ActionResult Create()
         {
@@ -260,6 +339,51 @@ namespace BangazonWorkfoceManagement.Controllers
                 }
             }
         }
+        private Employee GetEmployeeWTrainingById(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT e.Id, e.FirstName, e.LastName, e.DepartmentId, e.IsSupervisor, tp.Name, tp.Id AS TheTrainingId
+                                        FROM Employee e
+                                        LEFT JOIN EmployeeTraining et ON et.EmployeeId = e.Id 
+                                        LEFT JOIN TrainingProgram tp on et.TrainingProgramId  = tp.Id
+                                        WHERE e.Id = @id AND tp.StartDate > GETDATE()";
+
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    var reader = cmd.ExecuteReader();
+
+                    Employee employee = null;
+                    while (reader.Read())
+                    {
+                        if (employee == null)
+                        {
+                            employee = new Employee()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
+                            };
+                        }
+                        if (!reader.IsDBNull(reader.GetOrdinal("TheTrainingId")))
+                        {
+                            employee.AllTrainingPrograms.Add(
+                                new TrainingProgram()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("TheTrainingId")),
+                                    Name = reader.GetString(reader.GetOrdinal("Name")),
+                                });
+                        }
+                    }
+                    reader.Close();
+                    return employee;
+                }
+            }
+        }
         private Employee GetEmployeeWithComputerTraining(int id)
         {
             using (SqlConnection conn = Connection)
@@ -323,6 +447,46 @@ namespace BangazonWorkfoceManagement.Controllers
                     reader.Close();
                     employee.AllTrainingPrograms = GetEmployeeTrainingPrograms(id, cmd);
                     return employee;
+                }
+            }
+        }
+
+        private List<TrainingProgram> GetAvailableTrainings(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT tp.Id, tp.Name, tp.StartDate, tp.MaxAttendees
+                                    FROM TrainingProgram tp
+                                    LEFT JOIN EmployeeTraining et on et.TrainingProgramId = tp.Id
+                                    GROUP BY tp.Id, tp.Name, tp.StartDate, tp.MaxAttendees
+                                    HAVING tp.StartDate > GETDATE() AND tp.MaxAttendees > COUNT(et.TrainingProgramId)
+                                    UNION
+                                    SELECT tp.Id, tp.Name, tp.StartDate, tp.MaxAttendees
+                                    FROM TrainingProgram tp
+                                    LEFT JOIN EmployeeTraining et on et.TrainingProgramId = tp.Id
+                                    WHERE et.EmployeeId = @id AND tp.StartDate > GETDATE()";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    var reader = cmd.ExecuteReader();
+
+                    List<TrainingProgram> trainingPrograms = new List<TrainingProgram>();
+                    while (reader.Read())
+                    {
+                        int EmpId = reader.GetInt32(reader.GetOrdinal("Id"));
+                        if (!trainingPrograms.Exists(tp => tp.Id == EmpId))
+                            trainingPrograms.Add(
+                        new TrainingProgram()
+                        {
+                            Id = EmpId,
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
+                            MaxAttendees = reader.GetInt32(reader.GetOrdinal("MaxAttendees"))
+                        });
+                    }
+                    reader.Close();
+                    return (trainingPrograms);
                 }
             }
         }
