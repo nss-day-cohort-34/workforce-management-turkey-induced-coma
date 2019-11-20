@@ -77,9 +77,12 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Employee/AssignTraining
         public ActionResult AssignTraining(int id)
         {
+            Employee employee = GetEmployeeWTrainingById(id);
             var viewModel = new AssignTrainingViewModel()
-            { 
+            {
+                Employee = employee,
                 AllTrainingPrograms = GetAvailableTrainings(id),
+                SelectedTrainingIds = employee.AllTrainingPrograms.Select(tp => tp.Id).ToList()
             };
             return View(viewModel);
         }
