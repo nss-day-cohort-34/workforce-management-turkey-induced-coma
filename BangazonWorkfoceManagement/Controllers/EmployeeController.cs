@@ -78,13 +78,25 @@ namespace BangazonWorkfoceManagement.Controllers
         public ActionResult AssignTraining(int id)
         {
             Employee employee = GetEmployeeWTrainingById(id);
-            var viewModel = new AssignTrainingViewModel()
+            if (employee != null)
             {
-                Employee = employee,
-                AllTrainingPrograms = GetAvailableTrainings(id),
-                SelectedTrainingIds = employee.AllTrainingPrograms.Select(tp => tp.Id).ToList()
-            };
-            return View(viewModel);
+
+                var viewModel = new AssignTrainingViewModel()
+                {
+                    Employee = employee,
+                    AllTrainingPrograms = GetAvailableTrainings(id),
+                    SelectedTrainingIds = employee.AllTrainingPrograms.Select(tp => tp.Id).ToList()
+                };
+                return View(viewModel);
+            }
+            else
+            {
+                var viewModel = new AssignTrainingViewModel()
+                {
+                    AllTrainingPrograms = GetAvailableTrainings(id),
+                };
+                return View(viewModel);
+            }
         }
 
         // POST: Employee/AssignTraining
@@ -93,7 +105,6 @@ namespace BangazonWorkfoceManagement.Controllers
         public ActionResult AssignTraining(int id, AssignTrainingViewModel TrainingViewModel)
         {
             TrainingViewModel.Employee = GetEmployeeWTrainingById(id);
-            var TrainingProgramIdsToDelete = TrainingViewModel.Employee.AllTrainingPrograms.Select(tp => tp.Id).ToList();
             try
             {
                 using (SqlConnection conn = Connection)
@@ -101,17 +112,21 @@ namespace BangazonWorkfoceManagement.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        foreach (int oldTrainingId in TrainingProgramIdsToDelete)
+                        if (TrainingViewModel.Employee != null)
                         {
-                            cmd.CommandText = @"DELETE FROM EmployeeTraining 
+                            var TrainingProgramIdsToDelete = TrainingViewModel.Employee.AllTrainingPrograms.Select(tp => tp.Id).ToList();
+                            foreach (int oldTrainingId in TrainingProgramIdsToDelete)
+                            {
+                                cmd.CommandText = @"DELETE FROM EmployeeTraining 
                                             WHERE EmployeeId = @id AND TrainingProgramId = @trainingId;";
+                                cmd.Parameters.Clear();
+                                cmd.Parameters.Add(new SqlParameter("@id", id));
+                                cmd.Parameters.Add(new SqlParameter("@trainingId", oldTrainingId));
 
-                            cmd.Parameters.Add(new SqlParameter("@id", id));
-                            cmd.Parameters.Add(new SqlParameter("@trainingId", oldTrainingId));
 
+                                cmd.ExecuteNonQuery();
 
-                            cmd.ExecuteNonQuery();
-
+                            }
                         }
                         foreach (int trainingId in TrainingViewModel.SelectedTrainingIds)
                         {
@@ -127,7 +142,6 @@ namespace BangazonWorkfoceManagement.Controllers
                         }
 
                     }
-
                     return RedirectToAction(nameof(Index));
                 }
 
