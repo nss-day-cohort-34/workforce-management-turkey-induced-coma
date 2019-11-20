@@ -1,0 +1,28 @@
+﻿@model BangazonWorkfoceManagement.Models.ViewModels.AssignTrainingViewModel
+
+@{
+    ViewData["Title"] = "AssignTraining";
+}
+
+<h1>AssignTraining</h1>
+
+<h4>AssignTrainingViewModel</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="AssignTraining">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <input type="submit" value="Assign" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Details">Back to Details</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

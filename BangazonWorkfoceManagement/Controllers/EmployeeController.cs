@@ -77,10 +77,13 @@ namespace BangazonWorkfoceManagement.Controllers
         // GET: Employee/AssignTraining
         public ActionResult AssignTraining(int id)
         {
+            var employee = GetEmployeeById(id);
             var viewModel = new AssignTrainingViewModel()
             {
-                Employee = GetEmployeeById(id),
-                AllTrainingPrograms = GetAvailableTrainings(id)
+                Employee = employee,    
+                AllTrainingPrograms = GetAvailableTrainings(id),
+                //employee is returning null
+                SelectedTrainingIds = employee.AllTrainingPrograms.Select(tp => tp.Id).ToList()
             };
             return View(viewModel);
         }
@@ -88,7 +91,7 @@ namespace BangazonWorkfoceManagement.Controllers
         // POST: Employee/AssignTraining
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult AssignTraining(AssignTrainingViewModel TrainingViewModel)
+        public ActionResult AssignTraining(int id, AssignTrainingViewModel TrainingViewModel)
         {
             try
             {
@@ -97,14 +100,25 @@ namespace BangazonWorkfoceManagement.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        //cmd.CommandText = @"UPDATE EmployeeTraining
-                        //                     SET EmployeeId = @employeeId
-                        //                     TrainingProgramId = @trainingProgramId
-                        //                     WHERE EmployeeId = @id; ";
-                        cmd.CommandText = @" INSERT INTO EmployeeTraining(EmployeeId, TrainingProgramId)
-                                                VALUES (@EmployeeId, @TrainingProgramId);";
+                        cmd.CommandText = @"DELETE FROM TrainingProgram WHERE EmployeeId = @id;
+
+                                            UPDATE EmployeeTraining
+                                           SET EmployeeId = @employeeId
+                                            TrainingProgramId = @trainingProgramId
+                                            WHERE EmployeeId = @id; ";
+
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
                         cmd.Parameters.Add(new SqlParameter("@EmployeeId", TrainingViewModel.Employee.Id));
-                        cmd.Parameters.Add(new SqlParameter("@TrainingProgramId", TrainingViewModel.TrainingProgram.Id));
+                        cmd.Parameters.Add(new SqlParameter("@trainingProgramId", TrainingViewModel.SelectedTrainingIds));
+
+                        cmd.ExecuteNonQuery();
+
+                        cmd.CommandText = @"INSERT INTO EmployeeTraining(EmployeeId, TrainingProgramId)
+                                                VALUES (@EmployeeId, @TrainingProgramId);";
+
+                        cmd.Parameters.Clear();
+                        cmd.Parameters.Add(new SqlParameter("@EmployeeId", TrainingViewModel.Employee.Id));
+                        cmd.Parameters.Add(new SqlParameter("@TrainingProgramId", TrainingViewModel.SelectedTrainingIds));
 
                         cmd.ExecuteNonQuery();
                     }
@@ -390,18 +404,20 @@ namespace BangazonWorkfoceManagement.Controllers
                                     FROM TrainingProgram tp
                                     LEFT JOIN EmployeeTraining et on et.TrainingProgramId = tp.Id
                                     WHERE et.EmployeeId = @id AND tp.StartDate > GETDATE()";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
                     var reader = cmd.ExecuteReader();
+
                     List<TrainingProgram> trainingPrograms = new List<TrainingProgram>();
                     while (reader.Read())
                     {
-                        if (!reader.IsDBNull(reader.GetOrdinal("Id")))
+                        int EmpId = reader.GetInt32(reader.GetOrdinal("Id"));
+                        if (!trainingPrograms.Exists(tp => tp.Id == EmpId))
                             trainingPrograms.Add(
                         new TrainingProgram()
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Id = EmpId,
                             Name = reader.GetString(reader.GetOrdinal("Name")),
                             StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
-                            EndDate = reader.GetDateTime(reader.GetOrdinal("EndDate")),
                             MaxAttendees = reader.GetInt32(reader.GetOrdinal("MaxAttendees"))
                         });
                     }

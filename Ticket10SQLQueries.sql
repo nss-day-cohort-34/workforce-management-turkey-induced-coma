@@ -7,7 +7,7 @@ UNION
 SELECT tp.Id, tp.Name, tp.StartDate, tp.MaxAttendees
 FROM TrainingProgram tp
 LEFT JOIN EmployeeTraining et on et.TrainingProgramId = tp.Id
-WHERE et.EmployeeId = 1 AND tp.StartDate > GETDATE()
+WHERE et.EmployeeId = 2 AND tp.StartDate > GETDATE()
 
 SELECT et.TrainingProgramId, COUNT(et.TrainingProgramId) 
 		FROM EmployeeTraining et
