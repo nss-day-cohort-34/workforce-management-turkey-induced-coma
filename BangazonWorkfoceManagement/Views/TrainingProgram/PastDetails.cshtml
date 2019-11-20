@@ -1,0 +1,51 @@
+﻿@model BangazonWorkfoceManagement.Models.ViewModels.PastTrainingDetailsViewModel
+
+@{
+    ViewData["Title"] = "PastDetails";
+}
+
+<h1>PastDetails</h1>
+
+<div>
+    <h4>TrainingProgram</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.TrainingProgram.Name)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.TrainingProgram.Name)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.TrainingProgram.StartDate)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.TrainingProgram.StartDate)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.TrainingProgram.EndDate)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.TrainingProgram.EndDate)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.TrainingProgram.MaxAttendees)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.TrainingProgram.MaxAttendees)
+        </dd>
+        <dt class="col-sm-2">
+            Attendees
+        </dt>
+        @foreach (Employee e in Model.Attendees)
+        {
+            <dd class="col-sm-10">
+                @e.FullName
+            </dd>
+        }
+
+    </dl>
+</div>
+<div>
+    <a asp-action="PastPrograms">Back to List</a>
+</div>
