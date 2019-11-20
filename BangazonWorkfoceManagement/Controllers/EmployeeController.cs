@@ -468,33 +468,44 @@ namespace BangazonWorkfoceManagement.Controllers
         {
             cmd.Parameters.Clear();
             cmd.CommandText = @"SELECT t.Id, t.Name, t.StartDate, t.EndDate
-                                FROM Employee e
+                                FROM TrainingProgram t
                                 LEFT JOIN EmployeeTraining et
-                                ON e.Id = et.EmployeeId
-                                LEFT JOIN TrainingProgram t
-                                ON t.Id = et.TrainingProgramId
-                                WHERE e.Id = @id
-                                ORDER BY t.StartDate DESC";
+                                ON et.TrainingProgramId = t.Id
+                                WHERE et.EmployeeId = @id";
             cmd.Parameters.Add(new SqlParameter("@id", employeeId));
             List<TrainingProgram> trainingPrograms = new List<TrainingProgram>();
             var reader = cmd.ExecuteReader();
-            if (!reader.Read())
+
+            try
             {
-                return null;
-            }
-            while (reader.Read())
-            {
-                TrainingProgram trainingProgram = new TrainingProgram()
+                while (reader.Read())
                 {
-                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                    Name = reader.GetString(reader.GetOrdinal("Name")),
-                    StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
-                    EndDate = reader.GetDateTime(reader.GetOrdinal("EndDate")),
-                };
-                trainingPrograms.Add(trainingProgram);
+                    if (!reader.IsDBNull(reader.GetOrdinal("Id")))
+                    {
+                        TrainingProgram trainingProgram = new TrainingProgram()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
+                            EndDate = reader.GetDateTime(reader.GetOrdinal("EndDate")),
+                        };
+                        trainingPrograms.Add(trainingProgram);
+
+                    }
+                    else
+                    {
+                        reader.Close();
+                        return null;
+                    }
+                }
+                reader.Close();
+                return trainingPrograms;
+
             }
-            reader.Close();
-            return trainingPrograms;
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
         private List<Department> GetDepartments()
         {

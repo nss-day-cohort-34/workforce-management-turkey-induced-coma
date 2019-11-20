@@ -55,10 +55,9 @@
         <dd class="col-sm-10">
             @Html.DisplayFor(model => model.AssignedComputer.AssignDate)
         </dd>
-        <dt class="col-sm-2">
+        <dt class="col-12">
             Future Trainings
         </dt>
-        <br />
         @foreach (TrainingProgram tp in Model.FutureTrainings)
         {
             <dd class="col-sm-12">
@@ -67,10 +66,9 @@
             </dd>
         }
 
-        <dt class="col-sm-2">
+        <dt class="col-12">
             Past Trainings
         </dt>
-        <br />
         @foreach (TrainingProgram tp in Model.PastTrainings)
         {
             <dd class="col-sm-12">
